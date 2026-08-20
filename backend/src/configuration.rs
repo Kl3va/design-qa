@@ -1,7 +1,5 @@
-use config::{self, Config, ConfigBuilder};
+use config::{Config,};
 use serde::Deserialize;
-
-use crate::configuration::Environment::Local;
 
 #[derive(Deserialize)]
 pub struct Settings {
