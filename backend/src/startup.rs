@@ -1,8 +1,9 @@
 use actix_web::{App, web, HttpServer};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::TcpListener;
 use actix_web::dev::Server;
 
-use crate::routes::health_check;
+use crate::{configuration::{DatabaseSettings, Settings}, routes::health_check};
 
 pub struct Application {
  port: u16,
@@ -10,9 +11,10 @@ pub struct Application {
 }
 
 impl Application {
- pub async fn build(listener: TcpListener) -> Result<Self, std::io::Error> {
+ pub async fn build(listener: TcpListener, configuration: Settings) -> Result<Self, std::io::Error> {
        let port = listener.local_addr()?.port();
-       let server = run(listener).await?;
+       let connection_pool = get_connection_pool(&configuration.database);
+       let server = run(listener, connection_pool).await?;
        Ok(Self { port, server })
  }
 
@@ -25,9 +27,14 @@ impl Application {
  }
 }
 
-pub async fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
- let server = HttpServer::new(|| {
-  App::new().route("/health_check", web::get().to(health_check))
+//Create a Pool via sqlx
+pub fn get_connection_pool(connection: &DatabaseSettings) -> PgPool {
+   PgPoolOptions::new().connect_lazy_with(connection.with_db())
+}
+
+pub async fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Server, std::io::Error> {
+ let server = HttpServer::new(move|| {
+  App::new().app_data(web::Data::new(connection_pool.clone())).route("/health_check", web::get().to(health_check))
  }).listen(listener)?.run();
 
  Ok(server)

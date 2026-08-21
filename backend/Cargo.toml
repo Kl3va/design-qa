@@ -8,6 +8,14 @@ actix-web = "4.14.1"
 config = "0.15.25"
 serde = { version = "1.0.229", features = ["derive"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "uuid",
+    "chrono",
+] }
+uuid={version="1", features=["v4", "serde"]}
+secrecy = { version = "0.10", features = ["serde"] }
 
 [dev-dependencies]
 reqwest = "0.12"

@@ -1,7 +1,9 @@
 use config::{Config,};
 use serde::Deserialize;
+use secrecy::{ExposeSecret, SecretString};
+use sqlx::postgres::{PgConnectOptions, PgSslMode};
 
-#[derive(Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct Settings {
  pub application: ApplicationSettings,
  pub database: DatabaseSettings
@@ -18,9 +20,25 @@ pub struct DatabaseSettings {
  pub host: String,
  pub port: u16,
  pub username: String,
- pub password: String,
+ pub password: SecretString,
  pub database_name: String,
  pub require_ssl: bool
+}
+
+impl DatabaseSettings {
+ pub fn connection_string(&self) -> String {
+   format!("postgres:{}:{}@{}:{}/{}", self.username, self.password.expose_secret(), self.host, self.port, self.database_name)
+ }
+
+ pub fn with_db (&self) -> PgConnectOptions {
+  let ssl_mode = if self.require_ssl {
+   PgSslMode::Require
+  } else {
+   PgSslMode::Prefer
+  };
+
+  PgConnectOptions::new().host(&self.host).username(&self.username).password(self.password.expose_secret()).database(&self.database_name).port(self.port).ssl_mode(ssl_mode)
+ }
 }
 
 
