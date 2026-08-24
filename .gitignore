@@ -1,0 +1,21 @@
+# Rust
+**/target/
+**/*.rs.bk
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+**/node_modules/
+**/.next/
+**/out/
+
+# Local tooling
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
