@@ -1,5 +1,6 @@
 use actix_web::{App, web, HttpServer};
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
 use actix_web::dev::Server;
 
@@ -34,7 +35,7 @@ pub fn get_connection_pool(connection: &DatabaseSettings) -> PgPool {
 
 pub async fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Server, std::io::Error> {
  let server = HttpServer::new(move|| {
-  App::new().app_data(web::Data::new(connection_pool.clone())).route("/health_check", web::get().to(health_check))
+  App::new().wrap(TracingLogger::default()).app_data(web::Data::new(connection_pool.clone())).route("/health_check", web::get().to(health_check))
  }).listen(listener)?.run();
 
  Ok(server)
