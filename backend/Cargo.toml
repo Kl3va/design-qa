@@ -19,6 +19,7 @@ secrecy = { version = "0.10", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tracing-actix-web = "0.7.22"
+chrono = "0.4.45"
 
 
 [dev-dependencies]
