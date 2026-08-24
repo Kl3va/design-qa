@@ -7,12 +7,16 @@ DB_PASSWORD="${POSTGRES_PASSWORD:=password}"
 DB_NAME="${POSTGRES_DB:=design-qa}"
 DB_PORT="${POSTGRES_PORT:=5432}"
 
-docker run \
-  -e POSTGRES_USER=${DB_USER} \
-  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
-  -e POSTGRES_DB=${DB_NAME} \
-  -p "${DB_PORT}":5432 \
-  -d postgres:16
+# Start Postgres unless the caller explicitly asks us to skip Docker.
+if [[ -z "${SKIP_DOCKER}" ]]
+then
+  docker run \
+    -e POSTGRES_USER=${DB_USER} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+    -e POSTGRES_DB=${DB_NAME} \
+    -p "${DB_PORT}":5432 \
+    -d postgres:16
+fi
 
 export PGPASSWORD="${DB_PASSWORD}"
 
