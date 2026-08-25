@@ -279,6 +279,7 @@ dependencies = [
  "secrecy",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-actix-web",

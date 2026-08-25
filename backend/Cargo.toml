@@ -12,6 +12,7 @@ sqlx = { version = "0.8", default-features = false, features = [
     "runtime-tokio-rustls",
     "postgres",
     "uuid",
+       "macros",
     "chrono",
 ] }
 uuid={version="1", features=["v4", "serde"]}
@@ -20,6 +21,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tracing-actix-web = "0.7.22"
 chrono = "0.4.45"
+thiserror = "2.0.20"
 
 
 [dev-dependencies]
