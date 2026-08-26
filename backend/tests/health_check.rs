@@ -5,12 +5,12 @@ use reqwest::StatusCode;
 
 #[tokio::test]
 async fn health_check_works() {
-    let address = spawn_app().await;
+    let app = spawn_app().await;
 
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("{}/health_check", address))
+        .get(format!("{}/health_check", app.address))
         .send()
         .await
         .unwrap();
@@ -20,12 +20,12 @@ async fn health_check_works() {
 
 #[tokio::test]
 async fn non_existing_route_returns_404() {
-    let address = spawn_app().await;
+    let app = spawn_app().await;
 
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("{}/exit", address))
+        .get(format!("{}/exit", app.address))
         .send()
         .await
         .unwrap();

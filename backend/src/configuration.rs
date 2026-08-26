@@ -1,21 +1,21 @@
 use config::Config;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
-use sqlx::postgres::{PgConnectOptions, PgSslMode};
+use sqlx::{ConnectOptions, postgres::{PgConnectOptions, PgSslMode}};
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ApplicationSettings {
     pub host: String,
     pub port: u16,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub host: String,
     pub port: u16,
@@ -37,21 +37,21 @@ impl DatabaseSettings {
         )
     }
 
-    pub fn with_db(&self) -> PgConnectOptions {
-        let ssl_mode = if self.require_ssl {
-            PgSslMode::Require
-        } else {
-            PgSslMode::Prefer
-        };
+    pub fn without_db(&self) -> PgConnectOptions {
+     let ssl_mode = if self.require_ssl {
+      PgSslMode::Allow
+     } else {
+      PgSslMode::Prefer
+     };
 
-        PgConnectOptions::new()
-            .host(&self.host)
-            .username(&self.username)
-            .password(self.password.expose_secret())
-            .database(&self.database_name)
-            .port(self.port)
-            .ssl_mode(ssl_mode)
+     PgConnectOptions::new().host(&self.host).password(self.password.expose_secret()).port(self.port).ssl_mode(ssl_mode).username(&self.username)
     }
+
+    pub fn with_db(&self) -> PgConnectOptions {
+        let options = self.without_db().database(&self.database_name);
+
+        options.log_statements(tracing::log::LevelFilter::Trace)
+}
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
