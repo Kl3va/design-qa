@@ -1,7 +1,10 @@
 use config::Config;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
-use sqlx::{ConnectOptions, postgres::{PgConnectOptions, PgSslMode}};
+use sqlx::{
+    ConnectOptions,
+    postgres::{PgConnectOptions, PgSslMode},
+};
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
@@ -38,20 +41,25 @@ impl DatabaseSettings {
     }
 
     pub fn without_db(&self) -> PgConnectOptions {
-     let ssl_mode = if self.require_ssl {
-      PgSslMode::Allow
-     } else {
-      PgSslMode::Prefer
-     };
+        let ssl_mode = if self.require_ssl {
+            PgSslMode::Allow
+        } else {
+            PgSslMode::Prefer
+        };
 
-     PgConnectOptions::new().host(&self.host).password(self.password.expose_secret()).port(self.port).ssl_mode(ssl_mode).username(&self.username)
+        PgConnectOptions::new()
+            .host(&self.host)
+            .password(self.password.expose_secret())
+            .port(self.port)
+            .ssl_mode(ssl_mode)
+            .username(&self.username)
     }
 
     pub fn with_db(&self) -> PgConnectOptions {
         let options = self.without_db().database(&self.database_name);
 
         options.log_statements(tracing::log::LevelFilter::Trace)
-}
+    }
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {

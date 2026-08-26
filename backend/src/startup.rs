@@ -45,7 +45,8 @@ pub async fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Serve
         App::new()
             .wrap(TracingLogger::default())
             .app_data(web::Data::new(connection_pool.clone()))
-            .route("/health_check", web::get().to(health_check)).route("/projects", web::post().to(create_project))
+            .route("/health_check", web::get().to(health_check))
+            .route("/projects", web::post().to(create_project))
     })
     .listen(listener)?
     .run();
