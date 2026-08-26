@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{PgPool};
 use uuid::Uuid;
 
-use crate::{domain::ProjectName, persistence::create_project_query, utils::error_chain_fmt};
+use crate::{domain::ProjectName, persistence::insert_project, utils::error_chain_fmt};
 
 #[derive(Deserialize)]
 pub struct CreateProjectRequest {
@@ -13,10 +13,10 @@ pub struct CreateProjectRequest {
 
 #[derive(Serialize)]
 pub struct CreateProjectResponse {
- project_id: Uuid,
- name: String,
- created_at: DateTime<Utc>,
- updated_at: DateTime<Utc>
+ pub project_id: Uuid,
+ pub name: String,
+ pub created_at: DateTime<Utc>,
+ pub updated_at: DateTime<Utc>
 }
 
 #[derive(thiserror::Error)]
@@ -44,11 +44,13 @@ impl ResponseError for CreateProjectError {
 }
 
 pub async fn create_project (request: web::Json<CreateProjectRequest>, pool: web::Data<PgPool>) -> Result<HttpResponse, CreateProjectError> {
-  let project_name = ProjectName::parse(request.0.name).map_err(CreateProjectError::InvalidName)?;
 
-  let project = create_project_query(&pool, project_name).await?;
+  let CreateProjectRequest { name } = request.into_inner();
+  let project_name = ProjectName::parse(name).map_err(CreateProjectError::InvalidName)?;
 
-   Ok(HttpResponse::Ok().json(CreateProjectResponse {
+  let project = insert_project(&pool, project_name).await?;
+
+   Ok(HttpResponse::Created().json(CreateProjectResponse {
     project_id: project.project_id,
     name: project.name.as_ref().to_string(),
     created_at: project.created_at,
