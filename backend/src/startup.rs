@@ -4,7 +4,7 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 
-use crate::routes::create_project;
+use crate::routes::{create_project, create_run};
 use crate::{
     configuration::{DatabaseSettings, Settings},
     routes::health_check,
@@ -46,7 +46,7 @@ pub async fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Serve
             .wrap(TracingLogger::default())
             .app_data(web::Data::new(connection_pool.clone()))
             .route("/health_check", web::get().to(health_check))
-            .route("/projects", web::post().to(create_project))
+            .route("/projects", web::post().to(create_project)).route("/projects/{project_id}/runs", web::post().to(create_run))
     })
     .listen(listener)?
     .run();
