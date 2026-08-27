@@ -16,7 +16,7 @@ pub struct CreateRunRequest {
 #[derive(thiserror::Error)]
 pub enum CreateRunError {
  #[error("{0}")]
- InvalidPayloadError(#[from] NewQaRunError),
+ InvalidPayload(#[from] NewQaRunError),
   #[error("Failed to create run")]
     Database(#[from] sqlx::Error)
 }
@@ -30,7 +30,7 @@ impl std::fmt::Debug for CreateRunError {
 impl ResponseError for CreateRunError {
  fn status_code(&self) -> actix_web::http::StatusCode {
      match self {
-      Self::InvalidPayloadError(_) => StatusCode::BAD_REQUEST,
+      Self::InvalidPayload(_) => StatusCode::BAD_REQUEST,
       Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR
      }
  }

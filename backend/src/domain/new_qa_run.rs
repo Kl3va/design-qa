@@ -13,24 +13,24 @@ pub struct NewQaRun {
 #[derive(Debug, thiserror::Error)]
 pub enum NewQaRunError {
     #[error("Invalid target URL: {0}")]
-    TargetUrlError(String),
+    TargetUrl(String),
 
     #[error("Invalid Figma file key: {0}")]
-    FigmaFileKeyError(String),
+    FigmaFileKey(String),
 
     #[error("Invalid Figma node id: {0}")]
-    FigmaNodeIdError(String),
+    FigmaNodeId(String),
 }
 
 impl TryFrom<(CreateRunRequest, Uuid)> for NewQaRun {
  type Error = NewQaRunError;
   fn try_from(value: (CreateRunRequest, Uuid)) -> Result<Self, Self::Error> {
        let (req, project_id) = value;
-     let target_url = TargetUrl::parse(req.target_url).map_err(NewQaRunError::TargetUrlError)?;
+     let target_url = TargetUrl::parse(req.target_url).map_err(NewQaRunError::TargetUrl)?;
 
-     let figma_file_key = FigmaFileKey::parse(req.figma_file_key).map_err(NewQaRunError::FigmaFileKeyError)?;
+     let figma_file_key = FigmaFileKey::parse(req.figma_file_key).map_err(NewQaRunError::FigmaFileKey)?;
 
-     let figma_node_id = FigmaNodeId::parse(req.figma_node_id).map_err(NewQaRunError::FigmaNodeIdError)?;
+     let figma_node_id = FigmaNodeId::parse(req.figma_node_id).map_err(NewQaRunError::FigmaNodeId)?;
 
      Ok(Self {
             project_id,
