@@ -24,6 +24,7 @@ tracing-actix-web = "0.7.22"
 chrono = {version = "0.4.45", features = ["serde"]}
 thiserror = "2.0.20"
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
+url = "2.5.8"
 
 
 [dev-dependencies]
