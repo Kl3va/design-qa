@@ -14,18 +14,6 @@ pub enum RunStatus {
     Failed,
 }
 
-// pub struct QaRun {
-//     pub run_id: Uuid,
-//     pub project_id: Uuid,
-//     pub target_url: TargetUrl,
-//     pub figma_file_key: FigmaFileKey,
-//     pub figma_node_id: FigmaNodeId,
-//     pub status: RunStatus,
-//     pub created_at: DateTime<Utc>,
-//     pub started_at: Option<DateTime<Utc>>,
-//     pub completed_at: Option<DateTime<Utc>>,
-// }
-
 #[derive(Serialize)]
 pub struct QaRun {
     pub run_id: Uuid,
