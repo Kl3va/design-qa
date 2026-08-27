@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::domain::{FigmaFileKey, FigmaNodeId, TargetUrl};
+use crate::domain::{FigmaFileKey, FigmaNodeId, NewQaRun, TargetUrl};
 
 pub enum RunStatus {
     PENDING,
@@ -23,5 +23,18 @@ pub struct QaRun {
 }
 
 impl QaRun {
- 
+
+ pub fn new(run:NewQaRun) -> Self {
+  Self {
+   run_id: uuid::Uuid::new_v4(),
+   project_id: run.project_id,
+   target_url: run.target_url,
+   figma_file_key: run.figma_file_key,
+   figma_node_id: run.figma_node_id,
+   status: RunStatus::PENDING,
+   created_at: Utc::now(),
+   started_at: None,
+   completed_at: None
+  }
+ }
 }
