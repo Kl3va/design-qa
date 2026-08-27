@@ -9,10 +9,17 @@ pub struct NewQaRun {
     pub figma_node_id: FigmaNodeId,
 }
 
+
+#[derive(Debug, thiserror::Error)]
 pub enum NewQaRunError {
- TargetUrlError(String),
- FigmaFileKeyError(String),
- FigmaNodeIdError(String)
+    #[error("Invalid target URL: {0}")]
+    TargetUrlError(String),
+
+    #[error("Invalid Figma file key: {0}")]
+    FigmaFileKeyError(String),
+
+    #[error("Invalid Figma node id: {0}")]
+    FigmaNodeIdError(String),
 }
 
 impl TryFrom<CreateRunRequest> for NewQaRun {
