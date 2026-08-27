@@ -7,7 +7,7 @@ use crate::{domain::{NewQaRun, NewQaRunError}, services::start_new_run, utils::e
 
 #[derive(Deserialize)]
 pub struct CreateRunRequest {
-    pub project_id: Uuid,
+  //  pub project_id: Uuid,
     pub target_url: String,
     pub figma_file_key: String,
     pub figma_node_id: String,
@@ -36,8 +36,9 @@ impl ResponseError for CreateRunError {
  }
 }
 
-pub async fn create_run (req: web::Json<CreateRunRequest>, pool: web::Data<PgPool>) -> Result<HttpResponse, CreateRunError> {
-  let new_run: NewQaRun = req.into_inner().try_into().map_err(CreateRunError::InvalidPayloadError)?;
+pub async fn create_run (path: web::Path<Uuid>, req: web::Json<CreateRunRequest>, pool: web::Data<PgPool>) -> Result<HttpResponse, CreateRunError> {
+  let project_id = path.into_inner();
+  let new_run: NewQaRun = (req.into_inner(), project_id).try_into()?;
 
   let run = start_new_run(&pool, new_run).await?;
 

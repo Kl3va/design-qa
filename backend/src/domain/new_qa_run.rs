@@ -22,17 +22,18 @@ pub enum NewQaRunError {
     FigmaNodeIdError(String),
 }
 
-impl TryFrom<CreateRunRequest> for NewQaRun {
+impl TryFrom<(CreateRunRequest, Uuid)> for NewQaRun {
  type Error = NewQaRunError;
-  fn try_from(value: CreateRunRequest) -> Result<Self, Self::Error> {
-     let target_url = TargetUrl::parse(value.target_url).map_err(NewQaRunError::TargetUrlError)?;
+  fn try_from(value: (CreateRunRequest, Uuid)) -> Result<Self, Self::Error> {
+       let (req, project_id) = value;
+     let target_url = TargetUrl::parse(req.target_url).map_err(NewQaRunError::TargetUrlError)?;
 
-     let figma_file_key = FigmaFileKey::parse(value.figma_file_key).map_err(NewQaRunError::FigmaFileKeyError)?;
+     let figma_file_key = FigmaFileKey::parse(req.figma_file_key).map_err(NewQaRunError::FigmaFileKeyError)?;
 
-     let figma_node_id = FigmaNodeId::parse(value.figma_node_id).map_err(NewQaRunError::FigmaNodeIdError)?;
+     let figma_node_id = FigmaNodeId::parse(req.figma_node_id).map_err(NewQaRunError::FigmaNodeIdError)?;
 
      Ok(Self {
-            project_id: value.project_id,
+            project_id,
             target_url,
             figma_file_key,
             figma_node_id,
