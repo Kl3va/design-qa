@@ -21,3 +21,7 @@ pub struct QaRun {
     pub started_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
 }
+
+impl QaRun {
+ 
+}
