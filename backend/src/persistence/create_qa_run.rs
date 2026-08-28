@@ -1,16 +1,28 @@
 use crate::domain::RunStatus;
 use crate::domain::QaRun;
 use sqlx::PgPool;
+use uuid::Uuid;
 
-pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, sqlx::Error> {
-    sqlx::query_as!(
+#[derive(Debug, thiserror::Error)]
+pub enum InsertQaRunError {
+    #[error("project with id {0} not found")]
+    ProjectNotFound(Uuid),
+
+    #[error("Database error")]
+    Database(#[from] sqlx::Error)
+}
+
+pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQaRunError> {
+    let result = sqlx::query_as!(
         QaRun,
         r#"
+        
         INSERT INTO qa_runs (
             run_id, project_id, target_url, figma_file_key,
             figma_node_id, status, created_at, started_at, completed_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
+        WHERE EXISTS (SELECT 1 FROM projects WHERE project_id = $2)
         RETURNING
             run_id, project_id, target_url, figma_file_key, figma_node_id,
             status AS "status: _",
@@ -26,6 +38,13 @@ pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, sqlx::Er
         run.started_at,
         run.completed_at,
     )
-    .fetch_one(pool)
-    .await
+    .fetch_optional(pool)
+    .await?;
+
+    result.ok_or(InsertQaRunError::ProjectNotFound(run.project_id))
 }
+
+
+// pub async fn find_project_id (pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+//     sqlx::query!(r#""#)
+// }

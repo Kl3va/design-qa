@@ -3,7 +3,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{domain::{NewQaRun, NewQaRunError}, services::start_new_run, utils::error_chain_fmt};
+use crate::{domain::{NewQaRun, NewQaRunError}, persistence::InsertQaRunError, services::start_new_run, utils::error_chain_fmt};
 
 #[derive(Deserialize)]
 pub struct CreateRunRequest {
@@ -17,8 +17,8 @@ pub struct CreateRunRequest {
 pub enum CreateRunError {
  #[error("{0}")]
  InvalidPayload(#[from] NewQaRunError),
-  #[error("Failed to create run")]
-    Database(#[from] sqlx::Error)
+  #[error("Database error: {0}")]
+    Database(#[from] InsertQaRunError)
 }
 
 impl std::fmt::Debug for CreateRunError {
@@ -31,7 +31,9 @@ impl ResponseError for CreateRunError {
  fn status_code(&self) -> actix_web::http::StatusCode {
      match self {
       Self::InvalidPayload(_) => StatusCode::BAD_REQUEST,
-      Self::Database(_) => StatusCode::INTERNAL_SERVER_ERROR
+      Self::Database(InsertQaRunError::Database(_)) => StatusCode::INTERNAL_SERVER_ERROR,
+      Self::Database(InsertQaRunError::ProjectNotFound(_)) => StatusCode::NOT_FOUND
+      
      }
  }
 }
