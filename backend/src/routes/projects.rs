@@ -43,6 +43,11 @@ impl ResponseError for CreateProjectError {
     }
 }
 
+#[tracing::instrument(
+    name = "Create a project",
+    skip(request, pool)
+)]
+
 pub async fn create_project(
     request: web::Json<CreateProjectRequest>,
     pool: web::Data<PgPool>,

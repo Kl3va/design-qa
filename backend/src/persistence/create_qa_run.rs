@@ -11,6 +11,10 @@ pub enum InsertQaRunError {
     #[error("Database error")]
     Database(#[from] sqlx::Error)
 }
+#[tracing::instrument(
+    name= "insert a qa run to the database",
+    skip(pool, run)
+)]
 
 pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQaRunError> {
     let result = sqlx::query_as!(

@@ -3,11 +3,12 @@ use std::net::TcpListener;
 use backend::startup;
 //mod configuration::{get_configuration};
 use backend::configuration::get_configuration;
-use backend::telemetry::init_subscriber;
+use backend::telemetry::{get_subscriber, init_subscriber};
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
-    init_subscriber();
+    let subscriber = get_subscriber("design-qa".into(), "info".into(), std::io::stdout);
+    init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to load configuration files");
     let listener = TcpListener::bind(&format!(
         "{}:{}",

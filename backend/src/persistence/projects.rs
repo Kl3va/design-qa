@@ -2,6 +2,10 @@ use crate::domain::{Project, ProjectName};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+#[tracing::instrument(
+    name="insert project into database",
+    skip(pool, name)
+)]
 pub async fn insert_project(pool: &PgPool, name: ProjectName) -> Result<Project, sqlx::Error> {
     let project_id = Uuid::new_v4();
 

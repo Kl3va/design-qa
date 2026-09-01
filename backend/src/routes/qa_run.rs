@@ -38,6 +38,11 @@ impl ResponseError for CreateRunError {
  }
 }
 
+#[tracing::instrument(
+    name = "Create a QA run",
+    skip(req, pool),
+    fields(project_id=%path)
+)]
 pub async fn create_run (path: web::Path<Uuid>, req: web::Json<CreateRunRequest>, pool: web::Data<PgPool>) -> Result<HttpResponse, CreateRunError> {
   let project_id = path.into_inner();
   let new_run: NewQaRun = (req.into_inner(), project_id).try_into()?;
