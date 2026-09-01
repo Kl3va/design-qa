@@ -56,8 +56,3 @@ pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQa
         row.completed_at,
     ))
 }
-
-
-// pub async fn find_project_id (pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-//     sqlx::query!(r#""#)
-// }
