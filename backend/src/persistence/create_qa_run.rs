@@ -8,7 +8,7 @@ pub enum InsertQaRunError {
     #[error("project with id {0} not found")]
     ProjectNotFound(Uuid),
 
-    #[error("Database error")]
+    #[error("Failed to insert QA run")]
     Database(#[from] sqlx::Error)
 }
 #[tracing::instrument(skip_all)]
