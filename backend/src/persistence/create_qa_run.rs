@@ -11,14 +11,11 @@ pub enum InsertQaRunError {
     #[error("Database error")]
     Database(#[from] sqlx::Error)
 }
-#[tracing::instrument(
-    name= "insert a qa run to the database",
-    skip(pool, run)
-)]
+#[tracing::instrument(skip_all)]
 
 pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQaRunError> {
-    let result = sqlx::query_as!(
-        QaRun,
+    let result = sqlx::query!(
+        
         r#"
         
         INSERT INTO qa_runs (
@@ -29,7 +26,7 @@ pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQa
         WHERE EXISTS (SELECT 1 FROM projects WHERE project_id = $2)
         RETURNING
             run_id, project_id, target_url, figma_file_key, figma_node_id,
-            status AS "status: _",
+            status AS "status: RunStatus",
             created_at, started_at, completed_at
         "#,
         run.run_id,
@@ -37,15 +34,27 @@ pub async fn insert_qa_run(pool: &PgPool, run: &QaRun) -> Result<QaRun, InsertQa
         run.target_url,
         run.figma_file_key,
         run.figma_node_id,
-        run.status as RunStatus,
+        run.status() as RunStatus,
         run.created_at,
-        run.started_at,
-        run.completed_at,
+        run.started_at(),
+        run.completed_at(),
     )
     .fetch_optional(pool)
     .await?;
 
-    result.ok_or(InsertQaRunError::ProjectNotFound(run.project_id))
+   let row = result.ok_or(InsertQaRunError::ProjectNotFound(run.project_id))?;
+
+    Ok(QaRun::from_parts(
+        row.run_id,
+        row.project_id,
+        row.target_url,
+        row.figma_file_key,
+        row.figma_node_id,
+        row.status,
+        row.created_at,
+        row.started_at,
+        row.completed_at,
+    ))
 }
 
 

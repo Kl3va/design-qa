@@ -14,6 +14,16 @@ pub enum RunStatus {
     Failed,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum RunStateError {
+    #[error("Cannot start a run with status {0:?}")]
+    CannotStart(RunStatus),
+    #[error("Cannot complete a run with status {0:?}")]
+    CannotComplete(RunStatus),
+    #[error("Cannot fail a run with status {0:?}")]
+    CannotFail(RunStatus),
+}
+
 #[derive(Serialize)]
 pub struct QaRun {
     pub run_id: Uuid,
@@ -21,10 +31,10 @@ pub struct QaRun {
     pub target_url: String,
     pub figma_file_key: String,
     pub figma_node_id: String,
-    pub status: RunStatus,
+    status: RunStatus,
     pub created_at: DateTime<Utc>,
-    pub started_at: Option<DateTime<Utc>>,
-    pub completed_at: Option<DateTime<Utc>>,
+     started_at: Option<DateTime<Utc>>,
+     completed_at: Option<DateTime<Utc>>,
 }
 
 impl QaRun {
@@ -42,4 +52,74 @@ impl QaRun {
    completed_at: None
   }
  }
+
+ pub fn from_parts(
+        run_id: Uuid,
+        project_id: Uuid,
+        target_url: String,
+        figma_file_key: String,
+        figma_node_id: String,
+        status: RunStatus,
+        created_at: DateTime<Utc>,
+        started_at: Option<DateTime<Utc>>,
+        completed_at: Option<DateTime<Utc>>,
+    ) -> Self {
+        Self {
+            run_id,
+            project_id,
+            target_url,
+            figma_file_key,
+            figma_node_id,
+            status,
+            created_at,
+            started_at,
+            completed_at,
+        }
+    }
+
+ pub fn status (&self) -> RunStatus {
+    self.status
+ }
+
+ pub fn completed_at (&self) -> Option<DateTime<Utc>> {
+    self.completed_at
+ }
+
+ pub fn started_at (&self) -> Option<DateTime<Utc>> {
+    self.started_at
+ }
+
+ pub fn start(&mut self) -> Result<(), RunStateError> {
+    match self.status {
+        RunStatus::Pending => {
+            self.status = RunStatus::Running;
+            self.started_at = Some(Utc::now());
+            Ok(())
+        }
+        _ => Err(RunStateError::CannotStart(self.status)),
+    }
+ }
+
+ pub fn complete (&mut self) -> Result<(), RunStateError> {
+    match self.status {
+        RunStatus::Running => {
+            self.status = RunStatus::Completed;
+            self.completed_at = Some(Utc::now());
+            Ok(())
+        }
+        _ => Err(RunStateError::CannotComplete(self.status))
+    }
+ }
+
+ pub fn fail (&mut self) -> Result<(), RunStateError> {
+    match self.status {
+        RunStatus::Running => {
+            self.status = RunStatus::Failed;
+            self.completed_at = Some(Utc::now());
+            Ok(())
+        }
+        _ => Err(RunStateError::CannotFail(self.status))
+    }
+ }
+
 }
