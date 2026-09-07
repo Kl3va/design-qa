@@ -2,6 +2,7 @@ use actix_web::dev::Server;
 use actix_web::{App, HttpServer, web};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::TcpListener;
+use std::path::PathBuf;
 use tracing_actix_web::TracingLogger;
 
 use crate::routes::{create_project, create_run};
@@ -19,10 +20,11 @@ impl Application {
     pub async fn build(
         listener: TcpListener,
         configuration: Settings,
+        extractor_dir: PathBuf
     ) -> Result<Self, std::io::Error> {
         let port = listener.local_addr()?.port();
         let connection_pool = get_connection_pool(&configuration.database);
-        let server = run(listener, connection_pool).await?;
+        let server = run(listener, connection_pool, extractor_dir).await?;
         Ok(Self { port, server })
     }
 
@@ -40,11 +42,11 @@ pub fn get_connection_pool(connection: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(connection.with_db())
 }
 
-pub async fn run(listener: TcpListener, connection_pool: PgPool) -> Result<Server, std::io::Error> {
+pub async fn run(listener: TcpListener, connection_pool: PgPool, extractor_dir: PathBuf) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
-            .app_data(web::Data::new(connection_pool.clone()))
+            .app_data(web::Data::new(connection_pool.clone())).app_data(web::Data::new(extractor_dir.clone()))
             .route("/health_check", web::get().to(health_check))
             .route("/projects", web::post().to(create_project)).route("/projects/{project_id}/runs", web::post().to(create_run))
     })

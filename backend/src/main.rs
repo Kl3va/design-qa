@@ -10,12 +10,14 @@ async fn main() -> Result<(), std::io::Error> {
     let subscriber = get_subscriber("design-qa".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     let configuration = get_configuration().expect("Failed to load configuration files");
+    let extractor_dir = std::env::var("EXTRACTOR_DIR").expect("Failed to load extractor env");
+    let extractor_dir = std::path::PathBuf::from(extractor_dir);
     let listener = TcpListener::bind(&format!(
         "{}:{}",
         configuration.application.host, configuration.application.port
     ))?;
     //    let server = startup::run(listener).await?;
     //    server.await
-    let application = startup::Application::build(listener, configuration).await?;
+    let application = startup::Application::build(listener, configuration, extractor_dir).await?;
     application.run_until_stopped().await
 }

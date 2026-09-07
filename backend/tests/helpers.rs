@@ -35,7 +35,9 @@ pub async fn spawn_app() -> TestApp {
     config.database.database_name = uuid::Uuid::new_v4().to_string();
     //  let pool = get_connection_pool(&config.database);
     let pool = configure_database(&config.database).await;
-    let application = Application::build(listener, config.clone()).await.unwrap();
+    let extractor_dir = std::env::var("EXTRACTOR_DIR").expect("failed to load extractor env for test");
+    let extractor_dir = std::path::PathBuf::from(extractor_dir);
+    let application = Application::build(listener, config.clone(), extractor_dir).await.unwrap();
 
     let address = format!("http://127.0.0.1:{}", application.port());
 
