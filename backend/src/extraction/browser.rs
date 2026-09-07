@@ -1,27 +1,37 @@
 use serde::Deserialize;
 use std::process::Stdio;
+use std::time::Duration;
+use tempfile::TempDir;
 use tokio::process::Command;
+
+const EXTRACT_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Debug, thiserror::Error)]
 pub enum BrowserExtractError {
+    #[error("failed to create temp directory: {0}")]
+    TempDir(#[source] std::io::Error),
+
     #[error("failed to spawn extractor process: {0}")]
     Spawn(#[source] std::io::Error),
 
-    #[error("extractor process exited with status {0}")]
-    NonZeroExit(i32),
+    #[error("extractor process timed out")]
+    Timeout,
 
-    #[error("failed to read extractor output: {0}")]
-    ReadOutput(#[source] std::io::Error),
+    #[error("extractor process exited with status {code}: {stderr}")]
+    NonZeroExit { code: i32, stderr: String },
+
+    #[error("failed to wait on extractor process: {0}")]
+    Wait(#[source] std::io::Error),
 
     #[error("failed to parse extractor output: {0}")]
     InvalidJson(#[source] serde_json::Error),
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawDomExtract {
     pub url: String,
     pub viewport: RawViewport,
-    #[serde(rename = "totalRelevantVisible")]
     pub total_relevant_visible: usize,
     pub root: RawDomNode,
 }
@@ -33,20 +43,16 @@ pub struct RawViewport {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawFont {
     pub family: String,
     pub size: String,
     pub weight: String,
     pub style: String,
-    #[serde(rename = "lineHeight")]
     pub line_height: String,
-    #[serde(rename = "letterSpacing")]
     pub letter_spacing: String,
-    #[serde(rename = "textTransform")]
     pub text_transform: String,
-    #[serde(rename = "textAlign")]
     pub text_align: String,
-    #[serde(rename = "textDecorationLine")]
     pub text_decoration_line: String,
 }
 
@@ -59,22 +65,19 @@ pub struct RawBorderSides {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawBorderRadius {
-    #[serde(rename = "topLeft")]
     pub top_left: String,
-    #[serde(rename = "topRight")]
     pub top_right: String,
-    #[serde(rename = "bottomRight")]
     pub bottom_right: String,
-    #[serde(rename = "bottomLeft")]
     pub bottom_left: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawLayout {
     pub display: String,
     pub position: String,
-    #[serde(rename = "zIndex")]
     pub z_index: String,
 }
 
@@ -87,30 +90,24 @@ pub struct RawRect {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RawDomNode {
     pub id: i64,
     pub tag: String,
-    #[serde(rename = "idAttr")]
     pub id_attr: Option<String>,
-    #[serde(rename = "className")]
     pub class_name: Option<String>,
     pub selector: String,
     pub role: Option<String>,
     pub text: String,
-    #[serde(rename = "ownText")]
     pub own_text: String,
-    #[serde(rename = "hasText")]
     pub has_text: bool,
     pub rect: RawRect,
-    #[serde(rename = "inViewport")]
     pub in_viewport: bool,
     pub font: RawFont,
     pub color: String,
-    #[serde(rename = "backgroundColor")]
     pub background_color: String,
     pub opacity: String,
     pub border: RawBorderSides,
-    #[serde(rename = "borderRadius")]
     pub border_radius: RawBorderRadius,
     pub layout: RawLayout,
     #[serde(default)]
@@ -122,27 +119,39 @@ pub async fn extract_dom(
     target_url: &str,
     extractor_dir: &std::path::Path,
 ) -> Result<RawDomExtract, BrowserExtractError> {
-    let tmp_dir = std::env::temp_dir().join(format!("design-qa-{}", uuid::Uuid::new_v4()));
+    // This doesn't actively do anything with the screenshot till i decide where to move it or structure tied to run_id
+    let tmp_dir = TempDir::new().map_err(BrowserExtractError::TempDir)?;
 
-    let status = Command::new("node")
-        .arg("extract.mjs")
-        .arg(target_url)
-        .arg(format!("--out={}", tmp_dir.display()))
-        .current_dir(extractor_dir)
-        .stdout(Stdio::null())
-        .stderr(Stdio::inherit())
-        .status()
+    let spawn_and_wait = async {
+        let child = Command::new("node")
+            .arg("extract.mjs")
+            .arg(target_url)
+            .arg(format!("--out={}", tmp_dir.path().display()))
+            .current_dir(extractor_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(BrowserExtractError::Spawn)?;
+
+        child
+            .wait_with_output()
+            .await
+            .map_err(BrowserExtractError::Wait)
+    };
+
+    let output = tokio::time::timeout(EXTRACT_TIMEOUT, spawn_and_wait)
         .await
-        .map_err(BrowserExtractError::Spawn)?;
+        .map_err(|_| BrowserExtractError::Timeout)??;
 
-    if !status.success() {
-        return Err(BrowserExtractError::NonZeroExit(status.code().unwrap_or(-1)));
+    if !output.status.success() {
+        return Err(BrowserExtractError::NonZeroExit {
+            code: output.status.code().unwrap_or(-1),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        });
     }
 
-    let json_path = tmp_dir.join("extract.json");
-    let contents = tokio::fs::read_to_string(&json_path)
-        .await
-        .map_err(BrowserExtractError::ReadOutput)?;
+    // extract.mjs's own logging goes to stderr, so stdout is pure JSON.
+    serde_json::from_slice(&output.stdout).map_err(BrowserExtractError::InvalidJson)
 
-    serde_json::from_str(&contents).map_err(BrowserExtractError::InvalidJson)
+   
 }
