@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::process::Stdio;
 use std::time::Duration;
 use tempfile::TempDir;
@@ -27,7 +27,7 @@ pub enum BrowserExtractError {
     InvalidJson(#[source] serde_json::Error),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawDomExtract {
     pub url: String,
@@ -36,13 +36,13 @@ pub struct RawDomExtract {
     pub root: RawDomNode,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RawViewport {
     pub w: f32,
     pub h: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawFont {
     pub family: String,
@@ -56,7 +56,7 @@ pub struct RawFont {
     pub text_decoration_line: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RawBorderSides {
     pub top: String,
     pub right: String,
@@ -64,7 +64,7 @@ pub struct RawBorderSides {
     pub left: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawBorderRadius {
     pub top_left: String,
@@ -73,7 +73,7 @@ pub struct RawBorderRadius {
     pub bottom_left: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawLayout {
     pub display: String,
@@ -81,7 +81,7 @@ pub struct RawLayout {
     pub z_index: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RawRect {
     pub x: f32,
     pub y: f32,
@@ -89,7 +89,7 @@ pub struct RawRect {
     pub height: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawDomNode {
     pub id: i64,
@@ -154,4 +154,24 @@ pub async fn extract_dom(
     serde_json::from_slice(&output.stdout).map_err(BrowserExtractError::InvalidJson)
 
    
+}
+
+
+
+#[cfg(test)]
+
+mod test {
+    use super::*;
+
+    #[tokio::test]
+
+    async fn extracts_the_dom () {
+        
+        let path = std::path::Path::new("./extractor");
+        let result = extract_dom("https://kl3va.me", path).await.expect("extraction should succeed");
+
+        assert!(result.total_relevant_visible > 0);
+
+       // println!("{}", serde_json::to_string_pretty(&result).unwrap());
+    }
 }

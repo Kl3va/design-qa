@@ -94,11 +94,7 @@ try {
         const opacity = parseFloat(cs.opacity);
         const inViewport = isInViewport(r);
 
-        const selfValid =
-          r.width > 0 &&
-          r.height > 0 &&
-          opacity !== 0 &&
-          !(opts.viewportOnly && !inViewport);
+        const selfValid = r.width > 0 && r.height > 0 && opacity !== 0; // && !(opts.viewportOnly && !inViewport) if i decide to capture only viewport elements
 
         const childResults = [];
         for (const child of el.children) {
@@ -192,7 +188,7 @@ try {
 
       return { viewport: { w: vw, h: vh }, count, root };
     },
-    { viewportOnly },
+    // { viewportOnly },
   );
 
   const payload = {
